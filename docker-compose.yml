@@ -1,0 +1,137 @@
+services:
+  portal:
+    build:
+      context: ./portal
+    container_name: rodelsoft-portal
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - app-hija-1
+      - launch-service
+    networks:
+      - rodelsoft_net
+
+  app-hija-1:
+    build:
+      context: ./apps/app-hija-1
+    container_name: rodelsoft-app1
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      CONTROL_PLANE_BASE_URL: ${CONTROL_PLANE_BASE_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "8000"
+    networks:
+      - rodelsoft_net
+
+  launch-service:
+    build:
+      context: ./launch-service
+    container_name: rodelsoft-launch
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      CONTROL_PLANE_BASE_URL: ${CONTROL_PLANE_BASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "8200"
+    depends_on:
+      - app-hija-1
+    networks:
+      - rodelsoft_net
+
+  dynamic-app-router:
+    build:
+      context: ./dynamic-app-router
+    container_name: rodelsoft-dynamic-router
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      CONTROL_PLANE_BASE_URL: ${CONTROL_PLANE_BASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "8300"
+    depends_on:
+      - app-hija-1
+    networks:
+      - rodelsoft_net
+
+  authz-service:
+    build:
+      context: ./authz-service
+    container_name: rodelsoft-authz
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      AUTHZ_ADMIN_KEY: ${AUTHZ_ADMIN_KEY}
+      AUTHZ_ENABLE_DOCS: ${AUTHZ_ENABLE_DOCS}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "8100"
+    networks:
+      - rodelsoft_net
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: rodelsoft-nginx
+    restart: unless-stopped
+    depends_on:
+      - portal
+      - app-hija-1
+      - launch-service
+      - dynamic-app-router
+      - authz-service
+    ports:
+      - "8088:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - rodelsoft_net
+
+networks:
+  rodelsoft_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

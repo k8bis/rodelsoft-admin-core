@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+PyJWT
+pymysql
+python-dotenv
+mysql-connector-python
+cryptography
+bcrypt==4.1.3

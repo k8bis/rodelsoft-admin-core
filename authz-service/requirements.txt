@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+mysql-connector-python
+python-dotenv
+pymysql
+python-jose[cryptography]
+bcrypt==4.1.3
