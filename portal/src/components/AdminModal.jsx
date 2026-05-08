@@ -484,7 +484,17 @@ export default function AdminModal({
                                 <button
                                   type="button"
                                   className="rs-admin-row-action"
-                                  onClick={() => openAdminEditor("subscription", "edit", row)}
+                                  onClick={() =>
+                                    openAdminEditor("subscription", "edit", {
+                                      ...row,
+                                      start_date: row.start_date
+                                        ? row.start_date.substring(0, 10)
+                                        : "",
+                                      end_date: row.end_date
+                                        ? row.end_date.substring(0, 10)
+                                        : "",
+                                    })
+                                  }
                                 >
                                   Modificar
                                 </button>
